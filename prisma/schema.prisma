@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    String @id @default(uuid())
+  age   Int
+  name  String
+  email String @unique
+  role  Role   @default(BASIC)
+
+  // one-to-one relationship
+  userPreference   UserPreference? @relation(fields: [userPreferenceId], references: [id])
+  userPreferenceId String?         @unique
+
+  // one-to-many relationship
+  writtenPosts Post[] @relation("WrittenPosts")
+
+  // one-to-many relationship
+  favoritePosts Post[] @relation("FavoritePosts")
+
+  @@unique([age, name])
+  @@index([email])
+}
+
+model UserPreference {
+  id           String  @id @default(uuid())
+  emailUpdates Boolean @default(false)
+
+  // one-to-one relationship
+  user User?
+}
+
+model Post {
+  id            String   @id @default(uuid())
+  title         String
+  averageRating Decimal
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // one-to-many relationship
+  author   User   @relation("WrittenPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+
+  // one-to-many relationship
+  favorateBy   User?   @relation("FavoritePosts", fields: [favorateById], references: [id], onDelete: Cascade)
+  favorateById String?
+
+  // many-to-many relationship
+  categories Category[]
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  // many-to-many relationship
+  posts Post[]
+}
+
+enum Role {
+  BASIC
+  ADMIN
+}
